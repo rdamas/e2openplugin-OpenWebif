@@ -1,5 +1,6 @@
 #filter WebSafe
 #from urllib import quote
+#from json import dumps
 #from time import localtime, strftime
 #from Plugins.Extensions.OpenWebif.local import tstrings
 <div id="content_main" class="ui-widget-content" style="min-height: 500px;">
@@ -15,13 +16,14 @@
 		</div>
 
 		<div id="timers">
+		#set $index = 0
 		#for $timer in $timers
 			<div class="tm_row ui-widget-content ui-state-default" id="$timer.begin-$timer.end">
 				<div class="t_buttons tm_buttons">
 						<div>
 						#set $sref=quote($timer.serviceref, safe=' ~@#$&()*!+=:;,.?/\'')
 						#set $tname=quote($timer.name)
-						<a href='#' onClick="editTimer('$sref', '$timer.begin', '$timer.end');" title="$tstrings['edit_timer']"><div><i class="fa fa-edit"></i></div></a>
+						<a href='#' onClick='editTimer(timerlist[$index]);' title="$tstrings['edit_timer']"><div><i class="fa fa-edit"></i></div></a>
 						<a href='#' onClick="deleteTimer('$sref', '$timer.begin', '$timer.end', '$tname');" title="$tstrings['delete_timer']"><div><i class="fa fa-trash-o"></i></div></a>
 						<a href='#' onClick="toggleTimerStatus('$sref', '$timer.begin', '$timer.end');" 
 						#if $timer.disabled
@@ -76,11 +78,13 @@
 				</div>
 				<div style="clear: both;"></div>
 			</div>
+			#set $index = $index+1
 		#end for
 		</div>
 	</div>
 </div>
 <script type="text/javascript">
+var timerlist = $dumps($timers);
 #raw
 var reloadTimers = true;
 $(function() {

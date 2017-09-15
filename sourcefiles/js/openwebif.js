@@ -1108,15 +1108,14 @@ function initTimerEditBegin()
 	});
 }
 
-function editTimer(serviceref, begin, end) {
-	serviceref=decodeURI(serviceref);
-	current_serviceref = serviceref;
-	current_begin = begin;
-	current_end = end;
-	
+function editTimer(timer) {
+	current_serviceref = timer.serviceref;
+	current_begin = timer.begin;
+	current_end = timer.end;
+
 	var radio = false;
-	if (typeof serviceref !== 'undefined') {
-		radio = ( serviceref.substring(0,6) == '1:0:2:');
+	if (typeof timer.serviceref !== 'undefined') {
+		radio = ( timer.serviceref.substring(0,6) == '1:0:2:');
 	}
 	
 	$('#cbtv').prop('checked',!radio);
@@ -1139,97 +1138,80 @@ function editTimer(serviceref, begin, end) {
 		timeredit_begindestroy=false;
 	}
 
-	$.ajax({
-		url: "/api/timerlist",
-		success: function(data) {
-			timers = $.parseJSON(data);
-			if (timers.result) {
-				for (var id in timers.timers) {
-					timer = timers.timers[id];
-					if (timer.serviceref == serviceref &&
-						Math.round(timer.begin) == Math.round(begin) &&
-						Math.round(timer.end) == Math.round(end)) {
-							$('#timername').val(timer.name);
-							$('#description').val(timer.description);
-							$('#bouquet_select').val(timer.serviceref);
-							$('#bouquet_select').trigger("chosen:updated");
-							if(timer.serviceref !== $('#bouquet_select').val()) {
-								$('#bouquet_select').append($("<option></option>").attr("value", timer.serviceref).text(timer.servicename));
-								$('#bouquet_select').val(timer.serviceref);
-							}
-							$('#dirname').val(timer.dirname);
-							if(timer.dirname !== $('#dirname').val()) {
-								current_location = "<option value='" + timer.dirname + "'>" + timer.dirname + "</option>";
-								$('#dirname').append(current_location);
-								$('#dirname').val(timer.dirname);
-							}
-							$('#enabled').prop("checked", timer.disabled == 0);
-							$('#justplay').prop("checked", timer.justplay);
-							$('#afterevent').val(timer.afterevent);
-							$('#errorbox').hide();
-							var flags=timer.repeated;
-							for (var i=0; i<7; i++) {
-								$('#day'+i).attr('checked', ((flags & 1)==1));
-								flags >>= 1;
-							}
-							$('#repeatdays').buttonset('refresh');
-							
-							$('#tagsnew').find('input').attr('checked',false);
-							var tags = timer.tags.split(' ');
-							for (var j=0; j<tags.length; j++) {
-								$('#tag_'+tags[j]).attr('checked', true);
-							}
-							$('#tagsnew').buttonset('refresh');
-							
-							$('#timerbegin').datetimepicker('setDate', (new Date(Math.round(timer.begin) * 1000)));
-							$('#timerend').datetimepicker('setDate', (new Date(Math.round(timer.end) * 1000)));
-							
-							var r = (timer.state === 2);
-							// don't allow edit some fields if running
-							if(r) {
-								$('#timerbegin').datetimepicker('destroy');
-								timeredit_begindestroy=true;
-								$('#timerbegin').addClass('ui-state-disabled');
-								$('#timername').addClass('ui-state-disabled');
-								$("#dirname option").not(":selected").attr("disabled", "disabled");
-								$("#bouquet_select option").not(":selected").attr("disabled", "disabled");
-							} else {
-								$('#timername').removeClass('ui-state-disabled');
-								$('#timerbegin').removeClass('ui-state-disabled');
-								$("#dirname option").removeAttr('disabled');
-								$("#bouquet_select option").removeAttr('disabled');
-							}
-							$('#timerbegin').prop('readonly', r);
-							$('#timername').prop('readonly',r);
-							
-							if (typeof timer.vpsplugin_enabled !== 'undefined')
-							{
-								$('#vpsplugin_enabled').prop("checked", timer.vpsplugin_enabled);
-								$('#vpsplugin_safemode').prop("checked", !timer.vpsplugin_overwrite);
-								$('#has_vpsplugin1').show();
-								checkVPS();
-							}
-							else {
-								$('#has_vpsplugin1').hide();
-							}
-							
-							if (typeof timer.always_zap !== 'undefined')
-							{
-								$('#always_zap1').show();
-								$('#always_zap').prop("checked", timer.always_zap==1);
-								$('#justplay').prop("disabled",timer.always_zap==1);
-							} else {
-								$('#always_zap1').hide();
-							}
-							
-							openTimerDlg(tstr_edit_timer + " - " + timer.name);
-							
-							break;
-						}
-				}
-			}
-		}
-	});
+	$('#timername').val(timer.name);
+	$('#description').val(timer.description);
+	$('#bouquet_select').val(timer.serviceref);
+	$('#bouquet_select').trigger("chosen:updated");
+	if(timer.serviceref !== $('#bouquet_select').val()) {
+		$('#bouquet_select').append($("<option></option>").attr("value", timer.serviceref).text(timer.servicename));
+		$('#bouquet_select').val(timer.serviceref);
+	}
+	$('#dirname').val(timer.dirname);
+	if(timer.dirname !== $('#dirname').val()) {
+		current_location = "<option value='" + timer.dirname + "'>" + timer.dirname + "</option>";
+		$('#dirname').append(current_location);
+		$('#dirname').val(timer.dirname);
+	}
+	$('#enabled').prop("checked", timer.disabled == 0);
+	$('#justplay').prop("checked", timer.justplay);
+	$('#afterevent').val(timer.afterevent);
+	$('#errorbox').hide();
+	var flags=timer.repeated;
+	for (var i=0; i<7; i++) {
+		$('#day'+i).attr('checked', ((flags & 1)==1));
+		flags >>= 1;
+	}
+	$('#repeatdays').buttonset('refresh');
+	
+	$('#tagsnew').find('input').attr('checked',false);
+	var tags = timer.tags.split(' ');
+	for (var j=0; j<tags.length; j++) {
+		$('#tag_'+tags[j]).attr('checked', true);
+	}
+	$('#tagsnew').buttonset('refresh');
+	
+	$('#timerbegin').datetimepicker('setDate', (new Date(Math.round(timer.begin) * 1000)));
+	$('#timerend').datetimepicker('setDate', (new Date(Math.round(timer.end) * 1000)));
+	
+	var r = (timer.state === 2);
+	// don't allow edit some fields if running
+	if(r) {
+		$('#timerbegin').datetimepicker('destroy');
+		timeredit_begindestroy=true;
+		$('#timerbegin').addClass('ui-state-disabled');
+		$('#timername').addClass('ui-state-disabled');
+		$("#dirname option").not(":selected").attr("disabled", "disabled");
+		$("#bouquet_select option").not(":selected").attr("disabled", "disabled");
+	} else {
+		$('#timername').removeClass('ui-state-disabled');
+		$('#timerbegin').removeClass('ui-state-disabled');
+		$("#dirname option").removeAttr('disabled');
+		$("#bouquet_select option").removeAttr('disabled');
+	}
+	$('#timerbegin').prop('readonly', r);
+	$('#timername').prop('readonly',r);
+	
+	if (typeof timer.vpsplugin_enabled !== 'undefined')
+	{
+		$('#vpsplugin_enabled').prop("checked", timer.vpsplugin_enabled);
+		$('#vpsplugin_safemode').prop("checked", !timer.vpsplugin_overwrite);
+		$('#has_vpsplugin1').show();
+		checkVPS();
+	}
+	else {
+		$('#has_vpsplugin1').hide();
+	}
+	
+	if (typeof timer.always_zap !== 'undefined')
+	{
+		$('#always_zap1').show();
+		$('#always_zap').prop("checked", timer.always_zap==1);
+		$('#justplay').prop("disabled",timer.always_zap==1);
+	} else {
+		$('#always_zap1').hide();
+	}
+	
+	openTimerDlg(tstr_edit_timer + " - " + timer.name);
 }
 
 function addTimer(evt,chsref,chname,top) {
